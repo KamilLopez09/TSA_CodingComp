@@ -1,21 +1,29 @@
+# Using only standard-library tkinter so judges can run this without any pip installs.
+# webbrowser is also stdlib — used specifically to satisfy the rubric requirement of
+# at least 3 functional post-secondary links per career pathway.
 import tkinter as tk
 from tkinter import messagebox, ttk
 import webbrowser
 
-# =============================================
-# QUIZ DATA
-# =============================================
 
-# Base scores - copied fresh on each quiz run
+# =============================================================================
+# QUIZ DATA
+# =============================================================================
+
+# Keeping scores as a template dict so we can reset cleanly between quiz runs
+# using dict() — avoids mutating the original and getting wrong results on retakes.
 scores_template = {
     "Biologist": 0, "Full Stack": 0, "AI": 0, "Engineer": 0,
     "Educator": 0, "Physicist": 0, "Physician": 0,
 }
 
-# List of questions. Each question contains:
-# Index 0: The question string
-# Index 1: The multiple-choice options
-# Index 2: The careers associated with each option
+# Each question is a 3-element list:
+#   [0] question text
+#   [1] answer options (list of strings)
+#   [2] career mapping per answer — index matches the chosen option
+#
+# Structuring it this way lets us score answers with a simple loop instead of
+# writing a massive chain of if/elif blocks for every possible answer combination.
 questions = [
     [
         "What is your ideal schedule?",
@@ -54,10 +62,13 @@ questions = [
     ],
 ]
 
-# =============================================
+
+# =============================================================================
 # PATHWAY CONTENT
-# Post-secondary entries are 3-tuples: (name, description, url)
-# =============================================
+# Each post-secondary entry is a 3-tuple: (label, description, url)
+# The URL is what gets rendered as a clickable hyperlink in the Pathway View,
+# satisfying the TSA rubric requirement of 3+ functional post-secondary links.
+# =============================================================================
 
 pathways = {
     "Full Stack": {
@@ -79,9 +90,9 @@ pathways = {
             ("Internship", "Hands-on experience at real companies applying your skills professionally."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Computer Science, Software Engineering, or related field.", "https://www.coursera.org/browse/computer-science"),
-            ("Online Certifications", "HTML, CSS, JavaScript, and frameworks like React or Node.js via Coursera, freeCodeCamp, or Udemy.", "https://www.freecodecamp.org"),
-            ("Apprenticeships/Internships", "Structured path into the industry without a traditional degree.", "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm"),
+            ("Bachelor's Degree", "Computer Science, Software Engineering, or related field.", "https://www.cs.rutgers.edu/"),
+            ("Online Certifications", "HTML, CSS, JavaScript, and frameworks via freeCodeCamp or Codecademy.", "https://www.freecodecamp.org/"),
+            ("Apprenticeships & Data", "Structured path into the industry and BLS career outlook data.", "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm"),
         ],
         "certifications": "HTML, CSS, JavaScript\nFrontend: HTML, CSS | Backend: JavaScript",
         "jobs": ["Junior Developer", "Internship"],
@@ -102,9 +113,9 @@ pathways = {
             ("Internship", "Hands-on exposure to real AI projects at tech companies or research labs."),
         ],
         "postsecondary": [
-            ("Bachelor's/Master's Degree", "Computer Science, Data Science, or Artificial Intelligence.", "https://www.coursera.org/degrees"),
-            ("Online Certifications", "Machine learning, neural networks, and AI frameworks via Coursera, edX, or DeepLearning.AI.", "https://www.deeplearning.ai"),
-            ("Apprenticeships/Internships", "Real-world experience in AI research or tech companies.", "https://www.bls.gov/ooh/computer-and-information-technology/computer-and-information-research-scientists.htm"),
+            ("University AI Labs", "Computer Science or Artificial Intelligence degree tracks (e.g., Stanford AI).", "https://ai.stanford.edu/"),
+            ("Online Certifications", "Machine learning and neural network frameworks via DeepLearning.AI.", "https://www.deeplearning.ai/"),
+            ("Career Outlook", "BLS data on Computer and Information Research Scientists.", "https://www.bls.gov/ooh/computer-and-information-technology/computer-and-information-research-scientists.htm"),
         ],
         "certifications": "C++, OOP\nC++ is widely used in AI and systems programming. OOP provides a framework for machine learning.",
         "jobs": ["Data Analyst", "Prompt Engineer", "Research Assistant"],
@@ -128,9 +139,9 @@ pathways = {
             ("Volunteering", "Provides early hands-on experience working with others in community settings."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree in Education", "Includes pedagogy, curriculum design, and student teaching.", "https://www.ed.gov/higher-education"),
-            ("Online Certifications", "Teaching methods, special education, or EdTech tools.", "https://www.coursera.org/browse/education"),
-            ("Graduate Programs", "Master's in Education for higher-level teaching or administration roles.", "https://www.bls.gov/ooh/education-training-and-library/kindergarten-and-elementary-school-teachers.htm"),
+            ("Bachelor's in Education", "Top regional teaching programs like The College of New Jersey (TCNJ).", "https://education.tcnj.edu/"),
+            ("State Licensing", "New Jersey Department of Education Certification processes.", "https://www.nj.gov/education/certification/"),
+            ("Career Outlook", "BLS data for High School Teachers and Educators.", "https://www.bls.gov/ooh/education-training-and-library/high-school-teachers.htm"),
         ],
         "certifications": "State teaching license/certification",
         "jobs": ["Teacher Assistant", "Substitute Teacher", "Tutor"],
@@ -153,9 +164,9 @@ pathways = {
             ("Volunteering", "Shows initiative and provides a wide range of activities and experience."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree (Pre-Med)", "Usually pre-med; strong foundation in biology and chemistry.", "https://www.aamc.org/students/aspiring-doctors"),
-            ("Medical School", "Requires MCAT scores, transcripts, and letters of recommendation.", "https://students-residents.aamc.org/applying-medical-school"),
-            ("Residency", "Specialized clinical training lasting 3-7 years depending on specialty.", "https://www.bls.gov/ooh/healthcare/physicians-and-surgeons.htm"),
+            ("Pre-Med Pathways", "University pre-medical advisory resources (e.g., Rutgers HPO).", "https://hpo.rutgers.edu/"),
+            ("Medical School Requirements", "The Association of American Medical Colleges (AAMC).", "https://www.aamc.org/"),
+            ("Career Outlook", "BLS data on Physicians and Surgeons.", "https://www.bls.gov/ooh/healthcare/physicians-and-surgeons.htm"),
         ],
         "certifications": "MD/DO Degree, Licensing exams",
         "jobs": ["Resident Doctor", "Fellowship", "Practitioner"],
@@ -180,9 +191,9 @@ pathways = {
             ("Science-Related Clubs", "Demonstrates leadership and collaboration in your preferred field."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Biology or other specialized fields.", "https://www.asm.org/Careers/Explore-Careers-in-Microbiology"),
-            ("Internships/Lab Research", "Develop actual skills and experience for a future career.", "https://www.nsf.gov/crssprgm/reu"),
-            ("Graduate School", "Recommended for advanced research and specialized roles.", "https://www.bls.gov/ooh/life-physical-and-social-science/zoologists-and-wildlife-biologists.htm"),
+            ("Biological Sciences Degree", "Schools of Environmental and Biological Sciences.", "https://sebs.rutgers.edu/"),
+            ("Professional Organizations", "American Institute of Biological Sciences.", "https://www.aibs.org/"),
+            ("Career Outlook", "BLS data on Zoologists and Wildlife Biologists.", "https://www.bls.gov/ooh/life-physical-and-social-science/zoologists-and-wildlife-biologists.htm"),
         ],
         "certifications": "Bachelor's degree in Biology or related field",
         "jobs": ["Research Assistant", "Research Technician", "Field Observer"],
@@ -206,9 +217,9 @@ pathways = {
             ("Programming/3D Design", "Core parts of engineering curricula that also show initiative."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Engineering or related fields from an ABET-accredited program.", "https://www.abet.org/accreditation/find-programs"),
-            ("Engineering Technology Programs", "Applied engineering principles and technical skills.", "https://www.asme.org/career-education/students"),
-            ("Graduate School & Internships", "Recommended for specialized fields; internships often required for licensure.", "https://www.bls.gov/ooh/architecture-and-engineering/mechanical-engineers.htm"),
+            ("ABET Accredited Programs", "Find accredited engineering degree programs.", "https://www.abet.org/"),
+            ("Engineering Societies", "American Society of Mechanical Engineers (ASME).", "https://www.asme.org/"),
+            ("Career Outlook", "BLS data on Mechanical Engineers.", "https://www.bls.gov/ooh/architecture-and-engineering/mechanical-engineers.htm"),
         ],
         "certifications": "Engineering licensure (PE exam)",
         "jobs": ["Assistant Engineer", "Mechanical Design Engineer", "Test Engineer"],
@@ -231,9 +242,9 @@ pathways = {
             ("Mathematics Club", "Sharpens quantitative thinking and problem-solving skills."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree in Physics", "Covers classical mechanics, quantum mechanics, electromagnetism, and thermodynamics.", "https://www.aps.org/careers"),
-            ("Graduate School", "Master's or PhD to conduct research and specialize in a subfield.", "https://www.nsf.gov/crssprgm/reu"),
-            ("Research Internships", "Applicable experience that strengthens academic and job applications.", "https://www.bls.gov/ooh/life-physical-and-social-science/physicists-and-astronomers.htm"),
+            ("Physics Departments", "Top university physics programs (e.g., Princeton Physics).", "https://phy.princeton.edu/"),
+            ("Professional Societies", "American Physical Society (APS).", "https://www.aps.org/"),
+            ("Career Outlook", "BLS data on Physicists and Astronomers.", "https://www.bls.gov/ooh/life-physical-and-social-science/physicists-and-astronomers.htm"),
         ],
         "certifications": "Bachelor's or graduate degree in Physics",
         "jobs": ["Research Assistant", "Entry Level Software Developer"],
@@ -241,9 +252,13 @@ pathways = {
     },
 }
 
-# =============================================
+
+# =============================================================================
 # TKINTER APPLICATION
-# =============================================
+# Using a single class to manage all views inside one root window.
+# Instead of opening new windows per screen (which gets messy), we swap content
+# inside one container frame — this keeps the window stable and navigation clean.
+# =============================================================================
 
 class STEMApp:
     def __init__(self, root):
@@ -252,26 +267,35 @@ class STEMApp:
         self.root.configure(bg="#f0f0f0")
         self.root.resizable(True, True)
 
-        # Quiz state
+        # These instance variables track quiz state across method calls.
+        # top_match is stored so the dashboard can always send you back to your result.
         self.scores = {}
         self.current_q = 0
         self.answers = []
         self.selected_var = None
         self.top_match = None
 
-        # Single container frame — all views render inside here
+        # One persistent frame that every view renders inside.
+        # Swapping views = destroying its children and rebuilding, not making new windows.
         self.frame = tk.Frame(self.root, bg="#f0f0f0")
         self.frame.pack(fill="both", expand=True)
 
         self.show_welcome()
 
     def clear(self):
+        # Destroying all child widgets is cleaner than hiding them — no hidden state,
+        # no widgets lingering in memory from a previous screen.
         for widget in self.frame.winfo_children():
             widget.destroy()
 
-    # ── Welcome Screen ────────────────────────────────────────
+
+    # -------------------------------------------------------------------------
+    # WELCOME SCREEN
+    # -------------------------------------------------------------------------
+
     def show_welcome(self):
         self.clear()
+        # Each view resizes the window to fit its content instead of wasting empty space.
         self.root.geometry("560x250")
 
         inner = tk.Frame(self.frame, bg="#f0f0f0")
@@ -298,9 +322,14 @@ class STEMApp:
                   relief="flat", cursor="hand2",
                   command=self.root.quit).pack(side="left", padx=10)
 
-    # ── Quiz Logic ────────────────────────────────────────────
+
+    # -------------------------------------------------------------------------
+    # QUIZ — ASSESSMENT VIEW
+    # -------------------------------------------------------------------------
+
     def start_quiz(self):
-        # Reset scores for a fresh quiz
+        # dict() creates a shallow copy of the template so retakes always start at zero
+        # without accidentally accumulating scores from previous runs.
         self.scores = dict(scores_template)
         self.current_q = 0
         self.answers = []
@@ -317,22 +346,23 @@ class STEMApp:
         inner = tk.Frame(self.frame, bg="#f0f0f0")
         inner.pack(fill="both", expand=True, padx=30, pady=20)
 
-        # Progress bar row
+        # Progress row: counter on the left, bar on the right
         top = tk.Frame(inner, bg="#f0f0f0")
         top.pack(fill="x", pady=(0, 8))
         tk.Label(top, text=f"Question {self.current_q + 1} of {len(questions)}",
                  font=("Helvetica", 10), fg="gray", bg="#f0f0f0").pack(side="left")
         prog = ttk.Progressbar(top, length=220, mode="determinate")
         prog.pack(side="right")
+        # Integer division gives a clean 0-100 percent without floating point weirdness
         prog["value"] = int((self.current_q / len(questions)) * 100)
 
-        # Question text
         tk.Label(inner, text=question_text, font=("Helvetica", 16, "bold"),
                  bg="#f0f0f0", wraplength=530, justify="left").pack(anchor="w", pady=(4, 10))
 
         ttk.Separator(inner).pack(fill="x", pady=4)
 
-        # Radio buttons — standard loop like the original
+        # IntVar initialized to -1 as a sentinel — if it's still -1 when Next is clicked,
+        # the user hasn't selected anything and we show a warning instead of advancing.
         self.selected_var = tk.IntVar(value=-1)
         for j, opt in enumerate(options):
             tk.Radiobutton(inner, text=opt, variable=self.selected_var, value=j,
@@ -351,14 +381,15 @@ class STEMApp:
     def next_question(self):
         selected = self.selected_var.get()
 
-        # Ensure the user actually selected an option
         if selected == -1:
             messagebox.showwarning("No Selection", "Please select an answer before continuing.")
             return
 
         self.answers.append(selected)
 
-        # Tally the scores for the careers associated with the user's choice
+        # Use the selected index to look up which careers to award a point to.
+        # This avoids any hardcoded branching — adding a new question only requires
+        # updating the data, not touching this logic.
         careers_maps = questions[self.current_q][2]
         for career in careers_maps[selected]:
             self.scores[career] += 1
@@ -368,11 +399,17 @@ class STEMApp:
         if self.current_q < len(questions):
             self.show_question()
         else:
-            # Return the career with the highest score
+            # max() with scores.get as the key finds the highest-scoring career cleanly
             self.top_match = max(self.scores, key=self.scores.get)
             self.show_dashboard()
 
-    # ── Results Dashboard ──────────────────────────────────────
+
+    # -------------------------------------------------------------------------
+    # RESULTS DASHBOARD — MATCHES VIEW
+    # Rubric requires identifying at least 6 STEM careers. We show all 7 here,
+    # sorted by the user's score, so judges can verify the requirement at a glance.
+    # -------------------------------------------------------------------------
+
     def show_dashboard(self):
         self.clear()
         self.root.geometry("660x560")
@@ -383,7 +420,7 @@ class STEMApp:
         tk.Label(inner, text="Your Results", font=("Helvetica", 22, "bold"),
                  fg="#2B6CB0", bg="#f0f0f0").pack(pady=(0, 8))
 
-        # Top match highlight card
+        # Highlighted card for the top match — visually separated from the explore grid
         top_card = tk.Frame(inner, bg="#d4e8ff", relief="ridge", bd=2)
         top_card.pack(fill="x", pady=(0, 8))
         tk.Label(top_card, text="Your Top Match:", font=("Helvetica", 10),
@@ -400,7 +437,7 @@ class STEMApp:
         tk.Label(inner, text="Explore All 7 STEM Careers:",
                  font=("Helvetica", 11, "bold"), bg="#f0f0f0").pack(anchor="w")
 
-        # Career grid — sorted by score descending
+        # 2-column grid sorted by score so your best matches appear first
         grid = tk.Frame(inner, bg="#f0f0f0")
         grid.pack(fill="both", expand=True, pady=6)
 
@@ -415,6 +452,8 @@ class STEMApp:
                      font=("Helvetica", 10, "bold"), bg="white", fg="#222").pack(anchor="w", padx=8, pady=(6, 0))
             tk.Label(card, text=f"Score: {score}",
                      font=("Helvetica", 9), bg="white", fg="gray").pack(anchor="w", padx=8)
+            # c=career captures the loop variable — without this default arg trick,
+            # every button would reference the last value of `career` after the loop ends.
             tk.Button(card, text="Explore \u2192", font=("Helvetica", 9),
                       bg="#e8f0fe", fg="#2B6CB0", relief="flat", cursor="hand2", padx=6, pady=2,
                       command=lambda c=career: self.show_pathway(c)).pack(anchor="w", padx=8, pady=(2, 6))
@@ -423,17 +462,25 @@ class STEMApp:
                   bg="#e0e0e0", padx=12, pady=4, relief="flat", cursor="hand2",
                   command=self.start_quiz).pack(pady=(6, 0))
 
-    # ── Pathway Detail View ────────────────────────────────────
+
+    # -------------------------------------------------------------------------
+    # PATHWAY VIEW
+    # Standard tkinter frames can't scroll on their own, so we embed a Frame
+    # inside a Canvas and link them with a Scrollbar — the only native way to
+    # get a scrollable region in tkinter without third-party libraries.
+    # -------------------------------------------------------------------------
+
     def show_pathway(self, career_key):
         self.clear()
         self.root.geometry("680x580")
         p = pathways[career_key]
 
-        # Canvas + scrollbar for scrollable content
         canvas = tk.Canvas(self.frame, bg="#f0f0f0", highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
         inner = tk.Frame(canvas, bg="#f0f0f0")
 
+        # Whenever the inner frame changes size (new widgets added), recalculate
+        # the scroll region so the scrollbar reflects the full content height.
         inner.bind("<Configure>",
                    lambda _: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=inner, anchor="nw")
@@ -442,30 +489,38 @@ class STEMApp:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # Cross-platform mouse wheel scroll
+        # bind_all is required here because the Canvas widget doesn't take keyboard
+        # focus by default — without it, scrolling with the mouse wheel does nothing.
+        # We unbind these in go_back() so they don't interfere with other views.
         def _scroll(event):
             if event.delta:
+                # Windows/Mac: event.delta is a multiple of 120
                 canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
             elif event.num == 4:
+                # Linux scroll up
                 canvas.yview_scroll(-1, "units")
             elif event.num == 5:
+                # Linux scroll down
                 canvas.yview_scroll(1, "units")
 
         canvas.bind_all("<MouseWheel>", _scroll)
         canvas.bind_all("<Button-4>", _scroll)
         canvas.bind_all("<Button-5>", _scroll)
 
-        # ── Pathway Content ──
+        # --- Career Header ---
         tk.Label(inner, text=p["title"], font=("Helvetica", 20, "bold"),
                  fg="#2B6CB0", bg="#f0f0f0").pack(anchor="w", pady=(12, 4), padx=20)
         tk.Label(inner, text=p["description"], font=("Helvetica", 10),
                  bg="#f0f0f0", fg="#333", wraplength=600, justify="left").pack(anchor="w", pady=(0, 8), padx=20)
 
+        # Helper to draw a labeled divider between sections — keeps the layout code DRY
         def section_header(title):
             tk.Label(inner, text=f"\u2500\u2500 {title} \u2500\u2500",
                      font=("Helvetica", 11, "bold"), fg="#2B6CB0", bg="#f0f0f0").pack(anchor="w", padx=20, pady=(10, 2))
             ttk.Separator(inner).pack(fill="x", padx=20)
 
+        # Helper to render a list of items — handles both plain strings and
+        # (name, description) tuples without needing separate rendering functions.
         def add_items(items, numbered=False):
             for i, item in enumerate(items):
                 prefix = f"{i+1}. " if numbered else "\u2022 "
@@ -484,7 +539,10 @@ class STEMApp:
         section_header("Recommended Extracurriculars")
         add_items(p["extracurriculars"], numbered=True)
 
-        # Post-secondary with clickable hyperlinks (3 per career)
+        # --- Post-Secondary Options with Clickable Links ---
+        # Each entry is a 3-tuple so we can render the URL as a real hyperlink.
+        # This directly satisfies the TSA rubric: "at least 3 links for post-secondary
+        # education options." webbrowser.open() uses the system default browser.
         section_header("Post-Secondary Options")
         for i, (name, desc, url) in enumerate(p["postsecondary"]):
             row_f = tk.Frame(inner, bg="#f0f0f0")
@@ -493,10 +551,12 @@ class STEMApp:
                      font=("Helvetica", 10, "bold"), bg="#f0f0f0").pack(anchor="w")
             tk.Label(row_f, text=desc, font=("Helvetica", 9),
                      fg="#555", bg="#f0f0f0", wraplength=580, justify="left").pack(anchor="w", padx=10)
-            # Clickable hyperlink label — opens in default browser
             link = tk.Label(row_f, text=url, font=("Helvetica", 9, "underline"),
                             fg="#1a73e8", bg="#f0f0f0", cursor="hand2")
             link.pack(anchor="w", padx=10, pady=(0, 4))
+            # u=url captures the URL at loop time — same closure fix as the career grid above.
+            # try/except fallback shows the URL in a popup if the OS can't open a browser
+            # (common in restricted or WSL environments).
             def open_link(_, u=url):
                 try:
                     webbrowser.open(u)
@@ -518,7 +578,8 @@ class STEMApp:
             tk.Label(inner, text=f"  \u2022 {qual}", font=("Helvetica", 10),
                      bg="#f0f0f0", wraplength=580, justify="left").pack(anchor="w", padx=36, pady=2)
 
-        # Back button — unbinds scroll events before switching views
+        # Unbind scroll events before leaving — if we don't, the _scroll handler
+        # stays attached globally and can fire on the wrong canvas in other views.
         def go_back():
             canvas.unbind_all("<MouseWheel>")
             canvas.unbind_all("<Button-4>")
@@ -529,6 +590,10 @@ class STEMApp:
                   bg="#e0e0e0", padx=10, pady=4, relief="flat", cursor="hand2",
                   command=go_back).pack(pady=15, padx=20, anchor="w")
 
+
+# =============================================================================
+# ENTRY POINT
+# =============================================================================
 
 if __name__ == "__main__":
     root = tk.Tk()
