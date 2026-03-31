@@ -1,7 +1,13 @@
-import FreeSimpleGUI as sg
+import tkinter as tk
+from tkinter import messagebox, ttk
+import webbrowser
 
-# Dictionary to track the user's score for each career
-scores = {
+# =============================================
+# QUIZ DATA
+# =============================================
+
+# Base scores - copied fresh on each quiz run
+scores_template = {
     "Biologist": 0, "Full Stack": 0, "AI": 0, "Engineer": 0,
     "Educator": 0, "Physicist": 0, "Physician": 0,
 }
@@ -50,6 +56,7 @@ questions = [
 
 # =============================================
 # PATHWAY CONTENT
+# Post-secondary entries are 3-tuples: (name, description, url)
 # =============================================
 
 pathways = {
@@ -72,9 +79,9 @@ pathways = {
             ("Internship", "Hands-on experience at real companies applying your skills professionally."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Computer Science, Software Engineering, or related field."),
-            ("Online Certifications", "HTML, CSS, JavaScript, and frameworks like React or Node.js via Coursera, freeCodeCamp, or Udemy."),
-            ("Apprenticeships/Internships", "Structured path into the industry without a traditional degree."),
+            ("Bachelor's Degree", "Computer Science, Software Engineering, or related field.", "https://www.coursera.org/browse/computer-science"),
+            ("Online Certifications", "HTML, CSS, JavaScript, and frameworks like React or Node.js via Coursera, freeCodeCamp, or Udemy.", "https://www.freecodecamp.org"),
+            ("Apprenticeships/Internships", "Structured path into the industry without a traditional degree.", "https://www.bls.gov/ooh/computer-and-information-technology/software-developers.htm"),
         ],
         "certifications": "HTML, CSS, JavaScript\nFrontend: HTML, CSS | Backend: JavaScript",
         "jobs": ["Junior Developer", "Internship"],
@@ -95,9 +102,9 @@ pathways = {
             ("Internship", "Hands-on exposure to real AI projects at tech companies or research labs."),
         ],
         "postsecondary": [
-            ("Bachelor's/Master's Degree", "Computer Science, Data Science, or Artificial Intelligence."),
-            ("Online Certifications", "Machine learning, neural networks, and AI frameworks via Coursera, edX, or DeepLearning.AI."),
-            ("Apprenticeships/Internships", "Real-world experience in AI research or tech companies."),
+            ("Bachelor's/Master's Degree", "Computer Science, Data Science, or Artificial Intelligence.", "https://www.coursera.org/degrees"),
+            ("Online Certifications", "Machine learning, neural networks, and AI frameworks via Coursera, edX, or DeepLearning.AI.", "https://www.deeplearning.ai"),
+            ("Apprenticeships/Internships", "Real-world experience in AI research or tech companies.", "https://www.bls.gov/ooh/computer-and-information-technology/computer-and-information-research-scientists.htm"),
         ],
         "certifications": "C++, OOP\nC++ is widely used in AI and systems programming. OOP provides a framework for machine learning.",
         "jobs": ["Data Analyst", "Prompt Engineer", "Research Assistant"],
@@ -121,9 +128,9 @@ pathways = {
             ("Volunteering", "Provides early hands-on experience working with others in community settings."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree in Education", "Includes pedagogy, curriculum design, and student teaching."),
-            ("Online Certifications", "Teaching methods, special education, or EdTech tools."),
-            ("Graduate Programs", "Master's in Education for higher-level teaching or administration roles."),
+            ("Bachelor's Degree in Education", "Includes pedagogy, curriculum design, and student teaching.", "https://www.ed.gov/higher-education"),
+            ("Online Certifications", "Teaching methods, special education, or EdTech tools.", "https://www.coursera.org/browse/education"),
+            ("Graduate Programs", "Master's in Education for higher-level teaching or administration roles.", "https://www.bls.gov/ooh/education-training-and-library/kindergarten-and-elementary-school-teachers.htm"),
         ],
         "certifications": "State teaching license/certification",
         "jobs": ["Teacher Assistant", "Substitute Teacher", "Tutor"],
@@ -146,10 +153,9 @@ pathways = {
             ("Volunteering", "Shows initiative and provides a wide range of activities and experience."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Usually pre-med."),
-            ("Medical School", "Requires MCAT scores, transcripts, and letters of recommendation."),
-            ("Residency", "Specialized training lasting 3–7 years depending on specialty."),
-            ("Fellowship", "Optional advanced training after residency for in-depth specialty knowledge."),
+            ("Bachelor's Degree (Pre-Med)", "Usually pre-med; strong foundation in biology and chemistry.", "https://www.aamc.org/students/aspiring-doctors"),
+            ("Medical School", "Requires MCAT scores, transcripts, and letters of recommendation.", "https://students-residents.aamc.org/applying-medical-school"),
+            ("Residency", "Specialized clinical training lasting 3-7 years depending on specialty.", "https://www.bls.gov/ooh/healthcare/physicians-and-surgeons.htm"),
         ],
         "certifications": "MD/DO Degree, Licensing exams",
         "jobs": ["Resident Doctor", "Fellowship", "Practitioner"],
@@ -174,9 +180,9 @@ pathways = {
             ("Science-Related Clubs", "Demonstrates leadership and collaboration in your preferred field."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Biology or other specialized fields."),
-            ("Internships/Lab Research", "Develop actual skills and experience for a future career."),
-            ("Graduate School", "Recommended for advanced research and specialized roles."),
+            ("Bachelor's Degree", "Biology or other specialized fields.", "https://www.asm.org/Careers/Explore-Careers-in-Microbiology"),
+            ("Internships/Lab Research", "Develop actual skills and experience for a future career.", "https://www.nsf.gov/crssprgm/reu"),
+            ("Graduate School", "Recommended for advanced research and specialized roles.", "https://www.bls.gov/ooh/life-physical-and-social-science/zoologists-and-wildlife-biologists.htm"),
         ],
         "certifications": "Bachelor's degree in Biology or related field",
         "jobs": ["Research Assistant", "Research Technician", "Field Observer"],
@@ -200,10 +206,9 @@ pathways = {
             ("Programming/3D Design", "Core parts of engineering curricula that also show initiative."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree", "Engineering or related fields."),
-            ("Engineering Technology Programs", "Applied engineering principles and technical skills."),
-            ("Graduate School", "Recommended for specialized fields and advanced careers."),
-            ("Internships", "Provide experience and certification often required in the field."),
+            ("Bachelor's Degree", "Engineering or related fields from an ABET-accredited program.", "https://www.abet.org/accreditation/find-programs"),
+            ("Engineering Technology Programs", "Applied engineering principles and technical skills.", "https://www.asme.org/career-education/students"),
+            ("Graduate School & Internships", "Recommended for specialized fields; internships often required for licensure.", "https://www.bls.gov/ooh/architecture-and-engineering/mechanical-engineers.htm"),
         ],
         "certifications": "Engineering licensure (PE exam)",
         "jobs": ["Assistant Engineer", "Mechanical Design Engineer", "Test Engineer"],
@@ -226,9 +231,9 @@ pathways = {
             ("Mathematics Club", "Sharpens quantitative thinking and problem-solving skills."),
         ],
         "postsecondary": [
-            ("Bachelor's Degree in Physics", "Covers classical mechanics, quantum mechanics, electromagnetism, and thermodynamics."),
-            ("Graduate School", "Master's or PhD to conduct research and specialize in a subfield."),
-            ("Research Internships", "Applicable experience that strengthens academic and job applications."),
+            ("Bachelor's Degree in Physics", "Covers classical mechanics, quantum mechanics, electromagnetism, and thermodynamics.", "https://www.aps.org/careers"),
+            ("Graduate School", "Master's or PhD to conduct research and specialize in a subfield.", "https://www.nsf.gov/crssprgm/reu"),
+            ("Research Internships", "Applicable experience that strengthens academic and job applications.", "https://www.bls.gov/ooh/life-physical-and-social-science/physicists-and-astronomers.htm"),
         ],
         "certifications": "Bachelor's or graduate degree in Physics",
         "jobs": ["Research Assistant", "Entry Level Software Developer"],
@@ -237,171 +242,295 @@ pathways = {
 }
 
 # =============================================
-# GUI SETUP
+# TKINTER APPLICATION
 # =============================================
-sg.theme("LightBlue2")
 
-# Consistent fonts for the UI
-HEADER_FONT = ("Helvetica", 16, "bold")
-BODY_FONT = ("Helvetica", 11)
-LABEL_FONT = ("Helvetica", 12)
+class STEMApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Career Pathfinder")
+        self.root.configure(bg="#f0f0f0")
+        self.root.resizable(True, True)
 
-def run_quiz():
-    current_q = 0
-    answers = []
+        # Quiz state
+        self.scores = {}
+        self.current_q = 0
+        self.answers = []
+        self.selected_var = None
+        self.top_match = None
 
-    # Loop through each question in the dataset
-    while current_q < len(questions):
-        q = questions[current_q]
-        question_text = q[0]
-        options = q[1]
+        # Single container frame — all views render inside here
+        self.frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.frame.pack(fill="both", expand=True)
 
-        # Build the layout dynamically based on the number of options
-        progress = int((current_q / len(questions)) * 100)
-        layout = [
-            [sg.Text(f"Question {current_q + 1} of {len(questions)}", font=("Helvetica", 10), text_color="gray"),
-             sg.Push(), sg.ProgressBar(100, orientation="h", size=(18, 14), key="-PROG-", bar_color=("#4A90D9", "#D0D0D0"))],
-            [sg.Text(question_text, font=HEADER_FONT, size=(50, 2))],
-            [sg.HorizontalSeparator()]
-        ]
+        self.show_welcome()
 
-        # Humanized: Standard loop to add radio buttons to the layout
+    def clear(self):
+        for widget in self.frame.winfo_children():
+            widget.destroy()
+
+    # ── Welcome Screen ────────────────────────────────────────
+    def show_welcome(self):
+        self.clear()
+        self.root.geometry("560x250")
+
+        inner = tk.Frame(self.frame, bg="#f0f0f0")
+        inner.pack(expand=True, padx=40, pady=30)
+
+        tk.Label(inner, text="Career Pathfinder", font=("Helvetica", 28, "bold"),
+                 fg="#2B6CB0", bg="#f0f0f0").pack(pady=(0, 6))
+        tk.Label(inner, text="Discover the STEM career path best suited for you.",
+                 font=("Helvetica", 11), fg="gray", bg="#f0f0f0").pack()
+        tk.Label(inner, text="Answer 7 short questions to get your personalized result.",
+                 font=("Helvetica", 11), fg="gray", bg="#f0f0f0").pack(pady=(0, 16))
+
+        ttk.Separator(inner).pack(fill="x", pady=8)
+
+        btn_frame = tk.Frame(inner, bg="#f0f0f0")
+        btn_frame.pack(pady=6)
+
+        tk.Button(btn_frame, text="Start Quiz", font=("Helvetica", 12, "bold"),
+                  bg="#2B6CB0", fg="white", padx=20, pady=8,
+                  relief="flat", cursor="hand2",
+                  command=self.start_quiz).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="Quit", font=("Helvetica", 11),
+                  bg="#e0e0e0", padx=15, pady=8,
+                  relief="flat", cursor="hand2",
+                  command=self.root.quit).pack(side="left", padx=10)
+
+    # ── Quiz Logic ────────────────────────────────────────────
+    def start_quiz(self):
+        # Reset scores for a fresh quiz
+        self.scores = dict(scores_template)
+        self.current_q = 0
+        self.answers = []
+        self.show_question()
+
+    def show_question(self):
+        self.clear()
+        self.root.geometry("600x420")
+
+        q_data = questions[self.current_q]
+        question_text = q_data[0]
+        options = q_data[1]
+
+        inner = tk.Frame(self.frame, bg="#f0f0f0")
+        inner.pack(fill="both", expand=True, padx=30, pady=20)
+
+        # Progress bar row
+        top = tk.Frame(inner, bg="#f0f0f0")
+        top.pack(fill="x", pady=(0, 8))
+        tk.Label(top, text=f"Question {self.current_q + 1} of {len(questions)}",
+                 font=("Helvetica", 10), fg="gray", bg="#f0f0f0").pack(side="left")
+        prog = ttk.Progressbar(top, length=220, mode="determinate")
+        prog.pack(side="right")
+        prog["value"] = int((self.current_q / len(questions)) * 100)
+
+        # Question text
+        tk.Label(inner, text=question_text, font=("Helvetica", 16, "bold"),
+                 bg="#f0f0f0", wraplength=530, justify="left").pack(anchor="w", pady=(4, 10))
+
+        ttk.Separator(inner).pack(fill="x", pady=4)
+
+        # Radio buttons — standard loop like the original
+        self.selected_var = tk.IntVar(value=-1)
         for j, opt in enumerate(options):
-            layout.append([sg.Radio(opt, "ANSWER", key=f"opt_{j}", font=LABEL_FONT, pad=(10, 8))])
+            tk.Radiobutton(inner, text=opt, variable=self.selected_var, value=j,
+                           font=("Helvetica", 12), bg="#f0f0f0",
+                           activebackground="#f0f0f0", pady=5).pack(anchor="w", padx=20)
 
-        # Add the next button at the bottom
-        layout.append([sg.HorizontalSeparator()])
-        layout.append([sg.Push(), sg.Button("Next →", size=(10, 1), font=BODY_FONT), sg.Push()])
+        ttk.Separator(inner).pack(fill="x", pady=10)
 
-        # Create and display the window for the current question
-        window = sg.Window("Career Pathfinder", layout, size=(580, 370), finalize=True, element_justification="left", margins=(30, 20))
-        window["-PROG-"].update(progress)
+        btn_row = tk.Frame(inner, bg="#f0f0f0")
+        btn_row.pack(fill="x")
+        tk.Button(btn_row, text="Next \u2192", font=("Helvetica", 11),
+                  bg="#2B6CB0", fg="white", padx=16, pady=6,
+                  relief="flat", cursor="hand2",
+                  command=self.next_question).pack(side="right")
 
-        # Event loop to handle button clicks
-        while True:
-            event, values = window.read()
-            
-            # If user closes window with the X button
-            if event == sg.WIN_CLOSED:
-                window.close()
-                return None
-                
-            if event == "Next →":
-                # Humanized: Standard for-loop to find the selected answer
-                selected = None
-                for j in range(len(options)):
-                    if values.get(f"opt_{j}") == True:
-                        selected = j
-                        break
-                        
-                # Ensure the user actually clicked an option
-                if selected is None:
-                    sg.popup("Please select an answer before continuing.", title="No selection", font=BODY_FONT)
-                else:
-                    answers.append(selected)
-                    window.close()
-                    break
+    def next_question(self):
+        selected = self.selected_var.get()
+
+        # Ensure the user actually selected an option
+        if selected == -1:
+            messagebox.showwarning("No Selection", "Please select an answer before continuing.")
+            return
+
+        self.answers.append(selected)
 
         # Tally the scores for the careers associated with the user's choice
-        careers_maps = questions[current_q][2]
-        for career in careers_maps[answers[-1]]:
-            scores[career] += 1
+        careers_maps = questions[self.current_q][2]
+        for career in careers_maps[selected]:
+            self.scores[career] += 1
 
-        current_q += 1
+        self.current_q += 1
 
-    # Return the career with the highest score
-    return max(scores, key=scores.get)
+        if self.current_q < len(questions):
+            self.show_question()
+        else:
+            # Return the career with the highest score
+            self.top_match = max(self.scores, key=self.scores.get)
+            self.show_dashboard()
 
+    # ── Results Dashboard ──────────────────────────────────────
+    def show_dashboard(self):
+        self.clear()
+        self.root.geometry("660x560")
 
-def show_pathway(result):
-    p = pathways[result]
+        inner = tk.Frame(self.frame, bg="#f0f0f0")
+        inner.pack(fill="both", expand=True, padx=25, pady=15)
 
-    # Helper function to format sections neatly
-    def section(title, items, numbered=False):
-        lines = [f"── {title} ──\n"]
-        for i, item in enumerate(items):
-            # Check if the item is a tuple (course/extracurricular) or a flat string
-            if isinstance(item, tuple):
-                prefix = f"{i+1}. " if numbered else "• "
-                lines.append(f"{prefix}{item[0]}")
-                lines.append(f"   {item[1]}\n")
-            else:
-                prefix = f"{i+1}. " if numbered else "• "
-                lines.append(f"{prefix}{item}")
-        return "\n".join(lines)
+        tk.Label(inner, text="Your Results", font=("Helvetica", 22, "bold"),
+                 fg="#2B6CB0", bg="#f0f0f0").pack(pady=(0, 8))
 
+        # Top match highlight card
+        top_card = tk.Frame(inner, bg="#d4e8ff", relief="ridge", bd=2)
+        top_card.pack(fill="x", pady=(0, 8))
+        tk.Label(top_card, text="Your Top Match:", font=("Helvetica", 10),
+                 fg="#555", bg="#d4e8ff").pack(anchor="w", padx=12, pady=(8, 0))
+        tk.Label(top_card, text=pathways[self.top_match]["title"],
+                 font=("Helvetica", 18, "bold"), fg="#2B6CB0", bg="#d4e8ff").pack(anchor="w", padx=12)
+        tk.Button(top_card, text="View My Pathway \u2192",
+                  font=("Helvetica", 10, "bold"), bg="#2B6CB0", fg="white",
+                  relief="flat", cursor="hand2", padx=12, pady=5,
+                  command=lambda: self.show_pathway(self.top_match)).pack(anchor="w", padx=12, pady=(4, 10))
 
-    job_str = '\n'.join([f"  {i+1}. {job}" for i, job in enumerate(p['jobs'])])
-    qual_str = '\n'.join([f"  • {q}" for q in p['qualifications']])
+        ttk.Separator(inner).pack(fill="x", pady=6)
 
-    content = f"""{'='*55}
-{p['title'].upper()}
-{'='*55}
+        tk.Label(inner, text="Explore All 7 STEM Careers:",
+                 font=("Helvetica", 11, "bold"), bg="#f0f0f0").pack(anchor="w")
 
-{p['description']}
+        # Career grid — sorted by score descending
+        grid = tk.Frame(inner, bg="#f0f0f0")
+        grid.pack(fill="both", expand=True, pady=6)
 
-{section('Recommended High School Courses', p['courses'], numbered=True)}
-{section('Recommended Extracurriculars', p['extracurriculars'], numbered=True)}
-{section('Post-Secondary Options', p['postsecondary'], numbered=True)}
+        sorted_careers = sorted(self.scores.items(), key=lambda x: x[1], reverse=True)
+        for i, (career, score) in enumerate(sorted_careers):
+            row, col = divmod(i, 2)
+            card = tk.Frame(grid, bg="white", relief="groove", bd=1)
+            card.grid(row=row, column=col, padx=6, pady=4, sticky="ew")
+            grid.columnconfigure(col, weight=1)
 
-── Key Certifications ──
-{p['certifications']}
+            tk.Label(card, text=pathways[career]["title"],
+                     font=("Helvetica", 10, "bold"), bg="white", fg="#222").pack(anchor="w", padx=8, pady=(6, 0))
+            tk.Label(card, text=f"Score: {score}",
+                     font=("Helvetica", 9), bg="white", fg="gray").pack(anchor="w", padx=8)
+            tk.Button(card, text="Explore \u2192", font=("Helvetica", 9),
+                      bg="#e8f0fe", fg="#2B6CB0", relief="flat", cursor="hand2", padx=6, pady=2,
+                      command=lambda c=career: self.show_pathway(c)).pack(anchor="w", padx=8, pady=(2, 6))
 
-── Entry Level Jobs ──
-{job_str}
+        tk.Button(inner, text="Retake Quiz", font=("Helvetica", 10),
+                  bg="#e0e0e0", padx=12, pady=4, relief="flat", cursor="hand2",
+                  command=self.start_quiz).pack(pady=(6, 0))
 
-── Common Qualifications ──
-{qual_str}
-"""
+    # ── Pathway Detail View ────────────────────────────────────
+    def show_pathway(self, career_key):
+        self.clear()
+        self.root.geometry("680x580")
+        p = pathways[career_key]
 
-    # Layout for the final results screen
-    layout = [
-        [sg.Text("Your Career Match:", font=("Helvetica", 12), text_color="gray")],
-        [sg.Text(p["title"], font=("Helvetica", 22, "bold"), text_color="#2B6CB0")],
-        [sg.HorizontalSeparator()],
-        # Multiline box acts as a text viewer for the formatted string
-        [sg.Multiline(content, size=(68, 26), font=("Courier", 10), disabled=True, key="-OUT-", no_scrollbar=False)],
-        [sg.Push(), sg.Button("Close", size=(10, 1), font=BODY_FONT), sg.Push()],
-    ]
+        # Canvas + scrollbar for scrollable content
+        canvas = tk.Canvas(self.frame, bg="#f0f0f0", highlightthickness=0)
+        scrollbar = ttk.Scrollbar(self.frame, orient="vertical", command=canvas.yview)
+        inner = tk.Frame(canvas, bg="#f0f0f0")
 
-    window = sg.Window("Career Pathfinder — Results", layout, size=(660, 560), finalize=True, margins=(25, 20))
+        inner.bind("<Configure>",
+                   lambda _: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
 
-    while True:
-        event, _ = window.read()
-        if event in (sg.WIN_CLOSED, "Close"):
-            break
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
-    window.close()
+        # Cross-platform mouse wheel scroll
+        def _scroll(event):
+            if event.delta:
+                canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+            elif event.num == 4:
+                canvas.yview_scroll(-1, "units")
+            elif event.num == 5:
+                canvas.yview_scroll(1, "units")
 
+        canvas.bind_all("<MouseWheel>", _scroll)
+        canvas.bind_all("<Button-4>", _scroll)
+        canvas.bind_all("<Button-5>", _scroll)
 
-def main():
-    # Layout for the initial welcome screen
-    layout = [
-        [sg.Text("Career Pathfinder", font=("Helvetica", 28, "bold"), text_color="#2B6CB0")],
-        [sg.Text("Discover the STEM career path best suited for you.", font=BODY_FONT, text_color="gray")],
-        [sg.Text("Answer 7 short questions to get your personalized result.", font=BODY_FONT, text_color="gray")],
-        [sg.HorizontalSeparator()],
-        [sg.Button("Start Quiz", size=(14, 1), font=("Helvetica", 12, "bold")), sg.Button("Quit", size=(8, 1), font=BODY_FONT)],
-    ]
+        # ── Pathway Content ──
+        tk.Label(inner, text=p["title"], font=("Helvetica", 20, "bold"),
+                 fg="#2B6CB0", bg="#f0f0f0").pack(anchor="w", pady=(12, 4), padx=20)
+        tk.Label(inner, text=p["description"], font=("Helvetica", 10),
+                 bg="#f0f0f0", fg="#333", wraplength=600, justify="left").pack(anchor="w", pady=(0, 8), padx=20)
 
-    window = sg.Window("Career Pathfinder", layout, size=(520, 220), finalize=True, element_justification="center", margins=(40, 30))
+        def section_header(title):
+            tk.Label(inner, text=f"\u2500\u2500 {title} \u2500\u2500",
+                     font=("Helvetica", 11, "bold"), fg="#2B6CB0", bg="#f0f0f0").pack(anchor="w", padx=20, pady=(10, 2))
+            ttk.Separator(inner).pack(fill="x", padx=20)
 
-    # Event loop for the welcome screen
-    while True:
-        event, _ = window.read()
-        if event in (sg.WIN_CLOSED, "Quit"):
-            window.close()
-            return
-        if event == "Start Quiz":
-            window.close()
-            break
+        def add_items(items, numbered=False):
+            for i, item in enumerate(items):
+                prefix = f"{i+1}. " if numbered else "\u2022 "
+                if isinstance(item, tuple):
+                    tk.Label(inner, text=f"{prefix}{item[0]}",
+                             font=("Helvetica", 10, "bold"), bg="#f0f0f0").pack(anchor="w", padx=36, pady=(4, 0))
+                    tk.Label(inner, text=item[1], font=("Helvetica", 9),
+                             fg="#555", bg="#f0f0f0", wraplength=580, justify="left").pack(anchor="w", padx=46, pady=(0, 2))
+                else:
+                    tk.Label(inner, text=f"{prefix}{item}",
+                             font=("Helvetica", 10), bg="#f0f0f0").pack(anchor="w", padx=36, pady=2)
 
-    # Run the main program loop
-    result = run_quiz()
-    if result:
-        show_pathway(result)
+        section_header("Recommended High School Courses")
+        add_items(p["courses"], numbered=True)
+
+        section_header("Recommended Extracurriculars")
+        add_items(p["extracurriculars"], numbered=True)
+
+        # Post-secondary with clickable hyperlinks (3 per career)
+        section_header("Post-Secondary Options")
+        for i, (name, desc, url) in enumerate(p["postsecondary"]):
+            row_f = tk.Frame(inner, bg="#f0f0f0")
+            row_f.pack(anchor="w", padx=36, pady=(4, 0), fill="x")
+            tk.Label(row_f, text=f"{i+1}. {name}",
+                     font=("Helvetica", 10, "bold"), bg="#f0f0f0").pack(anchor="w")
+            tk.Label(row_f, text=desc, font=("Helvetica", 9),
+                     fg="#555", bg="#f0f0f0", wraplength=580, justify="left").pack(anchor="w", padx=10)
+            # Clickable hyperlink label — opens in default browser
+            link = tk.Label(row_f, text=url, font=("Helvetica", 9, "underline"),
+                            fg="#1a73e8", bg="#f0f0f0", cursor="hand2")
+            link.pack(anchor="w", padx=10, pady=(0, 4))
+            def open_link(_, u=url):
+                try:
+                    webbrowser.open(u)
+                except Exception:
+                    messagebox.showinfo("Link", u)
+            link.bind("<Button-1>", open_link)
+
+        section_header("Key Certifications")
+        tk.Label(inner, text=p["certifications"], font=("Helvetica", 10),
+                 bg="#f0f0f0", justify="left").pack(anchor="w", padx=36, pady=(4, 0))
+
+        section_header("Entry Level Jobs")
+        for i, job in enumerate(p["jobs"]):
+            tk.Label(inner, text=f"  {i+1}. {job}",
+                     font=("Helvetica", 10), bg="#f0f0f0").pack(anchor="w", padx=36, pady=2)
+
+        section_header("Common Qualifications")
+        for qual in p["qualifications"]:
+            tk.Label(inner, text=f"  \u2022 {qual}", font=("Helvetica", 10),
+                     bg="#f0f0f0", wraplength=580, justify="left").pack(anchor="w", padx=36, pady=2)
+
+        # Back button — unbinds scroll events before switching views
+        def go_back():
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+            self.show_dashboard()
+
+        tk.Button(inner, text="\u2190 Back to Results", font=("Helvetica", 10),
+                  bg="#e0e0e0", padx=10, pady=4, relief="flat", cursor="hand2",
+                  command=go_back).pack(pady=15, padx=20, anchor="w")
 
 
 if __name__ == "__main__":
-    main()
-
+    root = tk.Tk()
+    app = STEMApp(root)
+    root.mainloop()
